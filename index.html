@@ -207,7 +207,7 @@
         let appData = { usuarios: {}, configuracion: { maxIntentosFallidos: 5, bloqueoAutomatico: true } };
         const ADMIN_CONFIG = { username: 'admin', password: 'Admin2026!', email: 'admin@quiniela2026.com' };
         
-        // ============ TODOS LOS PARTIDOS FIFA 2026 (48 PARTIDOS) ============
+        // ============ TODOS LOS PARTIDOS FIFA 2026 (48 PARTIDOS - FECHAS 11 AL 27) ============
         const cronogramaFifa = {
             "2026-06-11": [
                 { hora: "15:00", equipos: "México vs Sudáfrica", grupo: "A", estadio: "Estadio Azteca, CDMX" },
@@ -252,6 +252,36 @@
                 { hora: "15:00", equipos: "Suiza vs Bosnia y Herzegovina", grupo: "B", estadio: "SoFi Stadium, Los Ángeles" },
                 { hora: "18:00", equipos: "Canadá vs Catar", grupo: "B", estadio: "BC Place, Vancouver" },
                 { hora: "21:00", equipos: "México vs Corea del Sur", grupo: "A", estadio: "Estadio Akron, Guadalajara" }
+            ],
+            "2026-06-19": [
+                { hora: "12:00", equipos: "Paraguay vs Australia", grupo: "D", estadio: "SoFi Stadium, Los Ángeles" },
+                { hora: "15:00", equipos: "Turquía vs Estados Unidos", grupo: "D", estadio: "SoFi Stadium, Los Ángeles" },
+                { hora: "18:00", equipos: "Escocia vs Marruecos", grupo: "C", estadio: "MetLife Stadium, NY/NJ" },
+                { hora: "21:00", equipos: "Brasil vs Haití", grupo: "C", estadio: "MetLife Stadium, NY/NJ" }
+            ],
+            "2026-06-20": [
+                { hora: "13:00", equipos: "Japón vs Túnez", grupo: "F", estadio: "AT&T Stadium, Dallas" },
+                { hora: "16:00", equipos: "Países Bajos vs Suecia", grupo: "F", estadio: "AT&T Stadium, Dallas" },
+                { hora: "19:00", equipos: "Ecuador vs Curazao", grupo: "E", estadio: "NRG Stadium, Houston" },
+                { hora: "22:00", equipos: "Alemania vs Costa de Marfil", grupo: "E", estadio: "NRG Stadium, Houston" }
+            ],
+            "2026-06-21": [
+                { hora: "12:00", equipos: "Nueva Zelanda vs Egipto", grupo: "G", estadio: "Lumen Field, Seattle" },
+                { hora: "15:00", equipos: "Bélgica vs Irán", grupo: "G", estadio: "Lumen Field, Seattle" },
+                { hora: "18:00", equipos: "Uruguay vs Cabo Verde", grupo: "H", estadio: "Hard Rock Stadium, Miami" },
+                { hora: "21:00", equipos: "España vs Arabia Saudita", grupo: "H", estadio: "Hard Rock Stadium, Miami" }
+            ],
+            "2026-06-22": [
+                { hora: "15:00", equipos: "Jordania vs Argelia", grupo: "J", estadio: "Arrowhead Stadium, Kansas City" },
+                { hora: "18:00", equipos: "Argentina vs Austria", grupo: "J", estadio: "Arrowhead Stadium, Kansas City" },
+                { hora: "21:00", equipos: "Noruega vs Senegal", grupo: "I", estadio: "Gillette Stadium, Boston" },
+                { hora: "00:00", equipos: "Francia vs Irak", grupo: "I", estadio: "Gillette Stadium, Boston" }
+            ],
+            "2026-06-23": [
+                { hora: "13:00", equipos: "Croacia vs Panamá", grupo: "L", estadio: "BMO Field, Toronto" },
+                { hora: "16:00", equipos: "Inglaterra vs Ghana", grupo: "L", estadio: "BMO Field, Toronto" },
+                { hora: "19:00", equipos: "RD Congo vs Uzbekistán", grupo: "K", estadio: "Estadio Azteca, CDMX" },
+                { hora: "22:00", equipos: "Colombia vs Portugal", grupo: "K", estadio: "Estadio Azteca, CDMX" }
             ],
             "2026-06-24": [
                 { hora: "15:00", equipos: "Suiza vs Canadá", grupo: "B", estadio: "BC Place, Vancouver" },
@@ -760,9 +790,9 @@
             if(!preds.length) {
                 cont.innerHTML = '<p>No tienes predicciones</p>';
             } else {
-                let html = '<table><thead><tr><th>Partido</th><th>Predicción</th><th>Grupo</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                let html = '</table><thead><tr><th>Partido</th><th>Predicción</th><th>Grupo</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 preds.forEach((p, i) => {
-                    html += `<tr><td style="text-align:left;">${escapeHtml(p.partido)}</td></td><strong>${p.resultado}</strong></td>
+                    html += `<tr><td style="text-align:left;">${escapeHtml(p.partido)}</td><td><strong>${p.resultado}</strong></td>
                     <td>${p.grupo}</td>
                     <td>${new Date(p.fecha).toLocaleDateString()}</td>
                     <td><button onclick="eliminarPrediccion(${i})" class="btn-danger" style="padding:5px 10px;">Eliminar</button></td></tr>`;
@@ -833,7 +863,7 @@
             
             let html = '<table><thead><tr><th>Hora</th><th>Partido</th><th>Grupo</th><th>Estadio</th></tr></thead><tbody>';
             partidos.forEach(p => {
-                html += `<tr><td style="text-align:left;">${p.hora}</td> <td style="text-align:left;"><strong>${p.equipos}</strong></td>
+                html += `<tr><td style="text-align:left;">${p.hora}</td><td style="text-align:left;"><strong>${p.equipos}</strong></td>
                 <td><span class="badge badge-info">${p.grupo}</span></td>
                 <td>${p.estadio}</td></tr>`;
                 if(select) {
@@ -843,7 +873,7 @@
                     select.appendChild(opt);
                 }
             });
-            html += '</tbody></tr>';
+            html += '</tbody></table>';
             document.getElementById('partidos').innerHTML = html;
         }
         
@@ -858,8 +888,13 @@
         function cargarFechas() {
             const sel = document.getElementById('fecha');
             if(!sel) return;
-            const fechas = ['2026-06-11','2026-06-12','2026-06-13','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-24','2026-06-25','2026-06-26','2026-06-27'];
-            const labels = ['11 Jun (2 partidos)','12 Jun (2 partidos)','13 Jun (4 partidos)','14 Jun (4 partidos)','15 Jun (4 partidos)','16 Jun (4 partidos)','17 Jun (4 partidos)','18 Jun (4 partidos)','24 Jun (6 partidos)','25 Jun (6 partidos)','26 Jun (6 partidos)','27 Jun (6 partidos)'];
+            const fechas = ['2026-06-11','2026-06-12','2026-06-13','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19','2026-06-20','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-27'];
+            const labels = [
+                '11 Jun (2 partidos)','12 Jun (2 partidos)','13 Jun (4 partidos)','14 Jun (4 partidos)',
+                '15 Jun (4 partidos)','16 Jun (4 partidos)','17 Jun (4 partidos)','18 Jun (4 partidos)',
+                '19 Jun (4 partidos)','20 Jun (4 partidos)','21 Jun (4 partidos)','22 Jun (4 partidos)',
+                '23 Jun (4 partidos)','24 Jun (6 partidos)','25 Jun (6 partidos)','26 Jun (6 partidos)','27 Jun (6 partidos)'
+            ];
             sel.innerHTML = '';
             fechas.forEach((f, i) => {
                 const o = document.createElement('option');
