@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiniela FIFA 2026 - Sistema Seguro</title>
+    <title>Quiniela FIFA 2026 - Multidispositivo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
         * {
@@ -41,6 +45,46 @@
         @keyframes glowText {
             from { text-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700; }
             to { text-shadow: 0 0 20px #ffd700, 0 0 30px #ff8c00; }
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .status-online {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .status-offline {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            background: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         .section {
@@ -209,25 +253,10 @@
             font-weight: 600;
         }
 
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-info {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
 
         .alert {
             padding: 15px;
@@ -236,23 +265,9 @@
             animation: slideIn 0.3s ease-out;
         }
 
-        .alert-success {
-            background: #d4edda;
-            border: 2px solid #28a745;
-            color: #155724;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            border: 2px solid #dc3545;
-            color: #721c24;
-        }
-
-        .alert-info {
-            background: #d1ecf1;
-            border: 2px solid #17a2b8;
-            color: #0c5460;
-        }
+        .alert-success { background: #d4edda; border: 2px solid #28a745; color: #155724; }
+        .alert-error { background: #f8d7da; border: 2px solid #dc3545; color: #721c24; }
+        .alert-info { background: #d1ecf1; border: 2px solid #17a2b8; color: #0c5460; }
 
         .modal {
             display: none;
@@ -354,6 +369,21 @@
         .status-blocked { background: #dc3545; }
         .status-inactive { background: #ffc107; }
 
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 768px) {
             .flex-container { flex-direction: column; }
             .column { min-width: 100%; }
@@ -362,12 +392,19 @@
     </style>
 </head>
 <body>
+    <!-- Indicador de conexión -->
+    <div class="connection-status status-offline" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span id="statusText">Conectando a Firebase...</span>
+    </div>
+
     <div class="container">
         <h1>⚽ QUINIELA FIFA 2026 🏆</h1>
 
         <!-- Sistema de Login/Registro -->
         <div class="section" id="loginSection">
             <h2>🔐 Acceso al Sistema</h2>
+            
             <div class="flex-container">
                 <!-- Iniciar Sesión -->
                 <div class="column">
@@ -412,10 +449,10 @@
                 <!-- Admin -->
                 <div class="column">
                     <h3>Administrador</h3>
-                    <input type="text" id="adminUsuario" placeholder="Usuario admin">
+                    <input type="text" id="adminUsuario" placeholder="Usuario admin" value="admin">
                     
                     <div class="password-container">
-                        <input type="password" id="adminPassword" placeholder="Contraseña admin">
+                        <input type="password" id="adminPassword" placeholder="Contraseña admin" value="Admin2026!">
                         <button class="toggle-password" onclick="togglePassword('adminPassword', this)" title="Mostrar/ocultar contraseña">
                             👁️
                         </button>
@@ -438,7 +475,6 @@
             </div>
 
             <div class="flex-container">
-                <!-- Sección de Partidos -->
                 <div class="column">
                     <h2>📅 Calendario de Partidos</h2>
                     <select id="fecha" onchange="mostrarPartidos()"></select>
@@ -451,7 +487,6 @@
                     <div id="partidos" style="margin-top:10px; max-height:400px; overflow:auto;"></div>
                 </div>
 
-                <!-- Sección de Predicciones -->
                 <div class="column">
                     <h2>🎯 Hacer Predicción</h2>
                     <label>Partido:</label>
@@ -488,9 +523,9 @@
             </div>
         </div>
 
-        <!-- Panel de Administrador Mejorado -->
+        <!-- Panel de Administrador -->
         <div class="section" id="adminSection" style="display:none; background: linear-gradient(135deg, #fff9e6, #fff3cc); border: 3px solid #ffd700;">
-            <h2>👑 Panel de Administrador</h2>
+            <h2>👑 Panel de Administrador - Todos los Dispositivos</h2>
             
             <div class="tabs">
                 <button class="tab active" onclick="cambiarTabAdmin('jugadores')">👥 Jugadores</button>
@@ -499,15 +534,19 @@
                 <button class="tab" onclick="cambiarTabAdmin('estadisticas')">📊 Estadísticas</button>
             </div>
 
-            <!-- Tab Jugadores -->
             <div id="tabJugadores">
-                <h3>Gestión de Jugadores</h3>
+                <h3>Gestión de Jugadores (Sincronizado en tiempo real)</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                     <button onclick="exportarJugadoresCSV()" class="btn-success">📥 CSV</button>
                     <button onclick="exportarJugadoresPDF()" class="btn-info">📄 PDF</button>
+                    <button onclick="sincronizarAhora()" class="btn-warning">🔄 Sincronizar Ahora</button>
                     <input type="text" id="buscarJugador" placeholder="🔍 Buscar jugador..." onkeyup="filtrarJugadores()" style="max-width: 300px;">
                 </div>
-                <table id="tablaJugadores">
+                <div id="loadingJugadores" style="text-align: center; padding: 20px;">
+                    <div class="loading"></div>
+                    <p>Cargando jugadores desde la nube...</p>
+                </div>
+                <table id="tablaJugadores" style="display: none;">
                     <thead>
                         <tr>
                             <th>Estado</th>
@@ -523,7 +562,6 @@
                 </table>
             </div>
 
-            <!-- Tab Predicciones -->
             <div id="tabPredicciones" style="display:none;">
                 <h3>Todas las Predicciones</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -545,29 +583,24 @@
                 </table>
             </div>
 
-            <!-- Tab Seguridad -->
             <div id="tabSeguridad" style="display:none;">
                 <h3>Gestión de Seguridad</h3>
-                
                 <div class="flex-container">
                     <div class="column">
                         <h4>🔒 Estado de Cuentas</h4>
                         <div id="listaUsuariosBloqueo" style="max-height: 400px; overflow-y: auto;"></div>
                     </div>
-                    
                     <div class="column">
                         <h4>🔑 Resetear Contraseña</h4>
                         <select id="usuarioResetPassword">
                             <option value="">Seleccionar usuario...</option>
                         </select>
-                        
                         <div class="password-container">
                             <input type="password" id="nuevaPasswordAdmin" placeholder="Nueva contraseña">
                             <button class="toggle-password" onclick="togglePassword('nuevaPasswordAdmin', this)" title="Mostrar/ocultar contraseña">
                                 👁️
                             </button>
                         </div>
-                        
                         <button onclick="resetearPasswordUsuario()" class="btn-warning">Resetear Contraseña</button>
                         
                         <h4 style="margin-top: 30px;">👤 Crear Admin Secundario</h4>
@@ -579,7 +612,6 @@
                 </div>
             </div>
 
-            <!-- Tab Estadísticas -->
             <div id="tabEstadisticas" style="display:none;">
                 <h3>Estadísticas Generales</h3>
                 <div class="stats-grid">
@@ -599,10 +631,6 @@
                         <div class="stat-number" id="adminTotalPredicciones">0</div>
                         <div>Total Predicciones</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="adminPromedioPredicciones">0</div>
-                        <div>Promedio por Jugador</div>
-                    </div>
                 </div>
                 
                 <div style="margin-top: 30px;">
@@ -614,7 +642,7 @@
             <button onclick="cerrarPanelAdmin()" class="btn-danger" style="margin-top: 20px;">Cerrar Panel Admin</button>
         </div>
 
-        <!-- Modal para Predicciones -->
+        <!-- Modales -->
         <div class="modal" id="modalPredicciones">
             <div class="modal-content">
                 <h2>Mis Predicciones</h2>
@@ -623,39 +651,27 @@
             </div>
         </div>
 
-        <!-- Modal para Cambiar Contraseña -->
         <div class="modal" id="modalCambiarPassword">
             <div class="modal-content">
                 <h2>Cambiar Contraseña</h2>
-                
                 <div class="password-container">
                     <input type="password" id="oldPassword" placeholder="Contraseña actual">
-                    <button class="toggle-password" onclick="togglePassword('oldPassword', this)" title="Mostrar/ocultar contraseña">
-                        👁️
-                    </button>
+                    <button class="toggle-password" onclick="togglePassword('oldPassword', this)" title="Mostrar/ocultar contraseña">👁️</button>
                 </div>
-                
                 <div class="password-container">
                     <input type="password" id="newPassword" placeholder="Nueva contraseña" onkeyup="verificarFortalezaPasswordModal()">
-                    <button class="toggle-password" onclick="togglePassword('newPassword', this)" title="Mostrar/ocultar contraseña">
-                        👁️
-                    </button>
+                    <button class="toggle-password" onclick="togglePassword('newPassword', this)" title="Mostrar/ocultar contraseña">👁️</button>
                 </div>
                 <div class="password-strength" id="passwordStrengthModal"></div>
-                
                 <div class="password-container">
                     <input type="password" id="confirmNewPassword" placeholder="Confirmar nueva contraseña">
-                    <button class="toggle-password" onclick="togglePassword('confirmNewPassword', this)" title="Mostrar/ocultar contraseña">
-                        👁️
-                    </button>
+                    <button class="toggle-password" onclick="togglePassword('confirmNewPassword', this)" title="Mostrar/ocultar contraseña">👁️</button>
                 </div>
-                
                 <button onclick="cambiarPassword()" class="btn-gold">Cambiar Contraseña</button>
                 <button onclick="cerrarModalCambiarPassword()" class="btn-danger">Cancelar</button>
             </div>
         </div>
 
-        <!-- Modal para Recuperar Contraseña -->
         <div class="modal" id="modalRecuperarPassword">
             <div class="modal-content">
                 <h2>Recuperar Contraseña</h2>
@@ -670,8 +686,31 @@
     </div>
 
     <script>
-        // ============ SISTEMA DE ALMACENAMIENTO Y SEGURIDAD ============
-        const STORAGE_KEY = 'quiniela_fifa_2026_secure';
+        // ============ CONFIGURACIÓN DE FIREBASE ============
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRg2T1DeijjsaltBVC-0KYjmO0gLlclfI",
+            authDomain: "quiniela-fifa-2026-514de.firebaseapp.com",
+            databaseURL: "https://quiniela-fifa-2026-514de-default-rtdb.firebaseio.com",
+            projectId: "quiniela-fifa-2026-514de",
+            storageBucket: "quiniela-fifa-2026-514de.firebasestorage.app",
+            messagingSenderId: "397564225467",
+            appId: "1:397564225467:web:805f9c59a7e70c10f8069e"
+        };
+
+        // Inicializar Firebase
+        let database = null;
+        let firebaseReady = false;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            firebaseReady = true;
+            console.log('✅ Firebase inicializado correctamente');
+        } catch (error) {
+            console.error('Error al inicializar Firebase:', error);
+        }
+
+        // ============ VARIABLES GLOBALES ============
         const ADMIN_CONFIG = {
             username: 'admin',
             password: 'Admin2026!',
@@ -691,19 +730,115 @@
         let isAdmin = false;
         let partidosFiltrados = [];
 
-        // ============ FUNCIÓN PARA MOSTRAR/OCULTAR CONTRASEÑAS ============
-        function togglePassword(inputId, button) {
-            const input = document.getElementById(inputId);
-            const icon = button;
+        // ============ FUNCIONES DE FIREBASE ============
+        function actualizarEstadoConexion() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
             
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.textContent = '🙈';
-                icon.title = 'Ocultar contraseña';
+            if (firebaseReady) {
+                statusDiv.className = 'connection-status status-online';
+                statusText.textContent = '🟢 Online - Multidispositivo';
             } else {
-                input.type = 'password';
-                icon.textContent = '👁️';
-                icon.title = 'Mostrar contraseña';
+                statusDiv.className = 'connection-status status-offline';
+                statusText.textContent = '🔴 Offline - Solo local';
+            }
+        }
+
+        function guardarEnFirebase() {
+            if (!firebaseReady || !database) return;
+            
+            database.ref('usuarios').set(appData.usuarios)
+                .then(() => {
+                    console.log('✅ Datos guardados en Firebase');
+                })
+                .catch(error => {
+                    console.error('Error al guardar en Firebase:', error);
+                });
+        }
+
+        function cargarDesdeFirebase() {
+            if (!firebaseReady || !database) return;
+            
+            database.ref('usuarios').once('value')
+                .then((snapshot) => {
+                    const usuariosFirebase = snapshot.val();
+                    if (usuariosFirebase) {
+                        // Combinar con datos locales
+                        const datosLocales = JSON.parse(localStorage.getItem('quiniela_fifa_2026_secure') || '{}');
+                        
+                        // Los datos de Firebase tienen prioridad
+                        appData.usuarios = {...datosLocales.usuarios, ...usuariosFirebase};
+                        
+                        // Guardar combinación localmente
+                        localStorage.setItem('quiniela_fifa_2026_secure', JSON.stringify(appData));
+                        
+                        console.log('✅ Datos cargados desde Firebase:', Object.keys(appData.usuarios).length, 'usuarios');
+                        actualizarEstadoConexion();
+                        
+                        if (isAdmin) {
+                            actualizarPanelAdmin();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar desde Firebase:', error);
+                    actualizarEstadoConexion();
+                });
+        }
+
+        function escucharCambiosFirebase() {
+            if (!firebaseReady || !database) return;
+            
+            database.ref('usuarios').on('value', (snapshot) => {
+                const usuariosFirebase = snapshot.val();
+                if (usuariosFirebase) {
+                    appData.usuarios = usuariosFirebase;
+                    
+                    // Guardar copia local
+                    const datosLocales = {usuarios: usuariosFirebase, configuracion: appData.configuracion};
+                    localStorage.setItem('quiniela_fifa_2026_secure', JSON.stringify(datosLocales));
+                    
+                    console.log('🔄 Cambios detectados en Firebase');
+                    
+                    // Actualizar interfaz si es necesario
+                    if (isAdmin && document.getElementById('adminSection').style.display !== 'none') {
+                        actualizarPanelAdmin();
+                    }
+                    
+                    if (currentUser && !isAdmin) {
+                        document.getElementById('totalJugadores').textContent = Object.keys(usuariosFirebase).length;
+                        document.getElementById('misPredicciones').textContent = 
+                            (usuariosFirebase[currentUser]?.predicciones || []).length;
+                    }
+                }
+            });
+        }
+
+        function sincronizarAhora() {
+            if (firebaseReady) {
+                mostrarAlerta('🔄 Sincronizando con Firebase...', 'info');
+                
+                // Primero cargar datos de Firebase
+                database.ref('usuarios').once('value')
+                    .then((snapshot) => {
+                        const usuariosFirebase = snapshot.val();
+                        if (usuariosFirebase) {
+                            appData.usuarios = usuariosFirebase;
+                        }
+                        
+                        // Luego guardar datos locales en Firebase
+                        return database.ref('usuarios').set(appData.usuarios);
+                    })
+                    .then(() => {
+                        cargarDesdeFirebase();
+                        mostrarAlerta('✅ Sincronización completada. Datos actualizados de todos los dispositivos.', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error en sincronización:', error);
+                        mostrarAlerta('Error en sincronización.', 'error');
+                    });
+            } else {
+                mostrarAlerta('❌ Firebase no está disponible.', 'error');
             }
         }
 
@@ -714,6 +849,17 @@
 
         function verificarPassword(password, hash) {
             return hashPassword(password) === hash;
+        }
+
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
         }
 
         function verificarFortalezaPassword() {
@@ -750,18 +896,31 @@
             else strengthDiv.classList.add('strength-strong');
         }
 
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
         // ============ INICIALIZACIÓN ============
         function inicializarApp() {
-            cargarDatos();
+            // Primero cargar datos locales
+            cargarDatosLocales();
             cargarFechas();
             
-            if (Object.keys(appData.usuarios).length === 0) {
-                inicializarAdmin();
-            }
-            
+            // Si no hay admin, crearlo
             if (!appData.usuarios[ADMIN_CONFIG.username]) {
                 inicializarAdmin();
             }
+            
+            // Intentar cargar datos de Firebase
+            if (firebaseReady) {
+                cargarDesdeFirebase();
+                escucharCambiosFirebase();
+            }
+            
+            actualizarEstadoConexion();
+            
+            // Actualizar estado cada 30 segundos
+            setInterval(actualizarEstadoConexion, 30000);
         }
 
         function inicializarAdmin() {
@@ -778,21 +937,26 @@
             guardarDatos();
         }
 
-        function cargarDatos() {
-            const datosGuardados = localStorage.getItem(STORAGE_KEY);
+        function cargarDatosLocales() {
+            const datosGuardados = localStorage.getItem('quiniela_fifa_2026_secure');
             if (datosGuardados) {
                 try {
                     appData = JSON.parse(datosGuardados);
                 } catch (e) {
-                    console.error('Error al cargar datos:', e);
-                    appData = { usuarios: {}, configuracion: { maxIntentosFallidos: 5, bloqueoAutomatico: true, requiereEmail: true } };
+                    console.error('Error al cargar datos locales:', e);
                 }
             }
         }
 
         function guardarDatos() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                // Guardar localmente
+                localStorage.setItem('quiniela_fifa_2026_secure', JSON.stringify(appData));
+                
+                // Guardar en Firebase si está disponible
+                if (firebaseReady) {
+                    guardarEnFirebase();
+                }
                 return true;
             } catch (e) {
                 console.error('Error al guardar datos:', e);
@@ -893,7 +1057,7 @@
                 if (appData.configuracion.bloqueoAutomatico && 
                     usuario.intentosFallidos >= appData.configuracion.maxIntentosFallidos) {
                     usuario.bloqueado = true;
-                    mostrarAlerta('🔒 Cuenta bloqueada por múltiples intentos fallidos. Contacta al administrador.', 'error');
+                    mostrarAlerta('🔒 Cuenta bloqueada por múltiples intentos fallidos.', 'error');
                 } else {
                     mostrarAlerta(`Contraseña incorrecta. Intentos restantes: ${appData.configuracion.maxIntentosFallidos - usuario.intentosFallidos}`, 'error');
                 }
@@ -968,9 +1132,7 @@
             document.getElementById('gameSection').style.display = 'none';
             
             actualizarPanelAdmin();
-            document.getElementById('adminUsuario').value = '';
-            document.getElementById('adminPassword').value = '';
-            mostrarAlerta('👑 Panel de administrador activado.', 'success');
+            mostrarAlerta('👑 Panel de administrador activado - Viendo datos de todos los dispositivos.', 'success');
         }
 
         // ============ GESTIÓN DE CONTRASEÑAS ============
@@ -1060,9 +1222,9 @@
 
             document.getElementById('resultadoRecuperacion').innerHTML = `
                 <div class="alert alert-success">
-                    <strong>✅ Contraseña recuperada exitosamente!</strong><br>
-                    Tu nueva contraseña temporal es: <strong style="font-size: 1.2em;">${tempPassword}</strong><br>
-                    <small>Por seguridad, cambia esta contraseña al iniciar sesión.</small>
+                    <strong>✅ Contraseña recuperada!</strong><br>
+                    Nueva contraseña temporal: <strong style="font-size: 1.2em;">${tempPassword}</strong><br>
+                    <small>Cámbiala al iniciar sesión.</small>
                 </div>
             `;
         }
@@ -1093,14 +1255,14 @@
                 return;
             }
 
-            if (confirm(`¿Estás seguro de resetear la contraseña de ${username}?`)) {
+            if (confirm(`¿Resetear la contraseña de ${username}?`)) {
                 appData.usuarios[username].passwordHash = hashPassword(nuevaPassword);
                 appData.usuarios[username].bloqueado = false;
                 appData.usuarios[username].intentosFallidos = 0;
                 guardarDatos();
                 actualizarPanelAdmin();
                 document.getElementById('nuevaPasswordAdmin').value = '';
-                mostrarAlerta(`✅ Contraseña de ${username} reseteada exitosamente.`, 'success');
+                mostrarAlerta(`✅ Contraseña de ${username} reseteada.`, 'success');
             }
         }
 
@@ -1110,7 +1272,7 @@
             const usuario = appData.usuarios[username];
             const accion = usuario.bloqueado ? 'desbloquear' : 'bloquear';
             
-            if (confirm(`¿Estás seguro de ${accion} a ${username}?`)) {
+            if (confirm(`¿${accion} a ${username}?`)) {
                 usuario.bloqueado = !usuario.bloqueado;
                 if (!usuario.bloqueado) {
                     usuario.intentosFallidos = 0;
@@ -1131,7 +1293,7 @@
                 return;
             }
 
-            if (confirm(`¿Estás seguro de convertir a ${username} en administrador?`)) {
+            if (confirm(`¿Convertir a ${username} en administrador?`)) {
                 appData.usuarios[username].esAdmin = true;
                 guardarDatos();
                 actualizarPanelAdmin();
@@ -1147,7 +1309,7 @@
                 return;
             }
 
-            if (confirm(`¿Estás seguro de eliminar permanentemente a ${username}?`)) {
+            if (confirm(`¿Eliminar permanentemente a ${username}?`)) {
                 delete appData.usuarios[username];
                 guardarDatos();
                 actualizarPanelAdmin();
@@ -1158,6 +1320,9 @@
         // ============ ACTUALIZACIÓN DE INTERFAZ ADMIN ============
         function actualizarPanelAdmin() {
             if (!isAdmin) return;
+            
+            document.getElementById('loadingJugadores').style.display = 'none';
+            document.getElementById('tablaJugadores').style.display = 'table';
             
             actualizarTabJugadores();
             actualizarTabPredicciones();
@@ -1264,13 +1429,11 @@
             const jugadoresActivos = usuarios.filter(u => !u.bloqueado).length;
             const jugadoresBloqueados = usuarios.filter(u => u.bloqueado).length;
             const totalPredicciones = usuarios.reduce((sum, u) => sum + u.predicciones.length, 0);
-            const promedio = totalJugadores > 0 ? (totalPredicciones / totalJugadores).toFixed(1) : 0;
 
             document.getElementById('adminTotalJugadores').textContent = totalJugadores;
             document.getElementById('adminJugadoresActivos').textContent = jugadoresActivos;
             document.getElementById('adminJugadoresBloqueados').textContent = jugadoresBloqueados;
             document.getElementById('adminTotalPredicciones').textContent = totalPredicciones;
-            document.getElementById('adminPromedioPredicciones').textContent = promedio;
 
             const actividadDiv = document.getElementById('actividadReciente');
             actividadDiv.innerHTML = '<table><tr><th>Usuario</th><th>Último Acceso</th><th>Predicciones</th></tr>';
@@ -1466,10 +1629,6 @@
             document.getElementById('registroPassword').value = '';
             document.getElementById('registroPasswordConfirm').value = '';
             document.getElementById('passwordStrength').className = 'password-strength';
-        }
-
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
 
         // ============ FUNCIONES DE PARTIDOS ============
@@ -1740,7 +1899,7 @@
             alerta.className = `alert alert-${tipo} alert-flotante`;
             alerta.textContent = mensaje;
             alerta.style.position = 'fixed';
-            alerta.style.top = '20px';
+            alerta.style.top = '80px';
             alerta.style.right = '20px';
             alerta.style.zIndex = '10000';
             alerta.style.maxWidth = '400px';
